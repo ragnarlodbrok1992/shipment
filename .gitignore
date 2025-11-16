@@ -1,0 +1,6 @@
+target/
+win_build/
+build_script_output.txt
+Cargo.lock
+vcvars.bat
+

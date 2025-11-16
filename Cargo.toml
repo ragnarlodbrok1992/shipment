@@ -1,0 +1,10 @@
+[package]
+name = "shipment"
+edition = '2024'
+
+[[bin]]
+name = "shipment"
+path = "src/main.rs"
+
+[build-dependencies]
+regex = "*"
