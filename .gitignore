@@ -4,4 +4,4 @@ build_script_output.txt
 Cargo.lock
 vcvars.bat
 tags
-
+*.rdbg

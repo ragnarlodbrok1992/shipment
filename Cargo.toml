@@ -6,5 +6,9 @@ edition = '2024'
 name = "shipment"
 path = "src/main.rs"
 
+[dependencies]
+winapi = { version = "*", features = ["winuser"] }
+
 [build-dependencies]
 regex = "*"
+

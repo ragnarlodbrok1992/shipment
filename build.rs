@@ -27,7 +27,7 @@ fn main() {
     let lib_bin = "lib.exe";
     let output_dir = "win_build";
     let windows_code_test_binary = "shipment_win32_test.exe";
-    let windows_test_lib = "test_library";
+    let windows_layer_lib = "windows_layer_library";
     fs::create_dir_all(output_dir).unwrap();
 
     // Source files for c++ build
@@ -82,7 +82,8 @@ fn main() {
            .arg(fd_string)
            .arg(source_file)
            .arg("/link")
-           .arg("user32.lib");
+           .arg("user32.lib")
+           .arg("gdi32.lib");
 
         let output = cmd.output().expect("Failed to execute command cl.exe! --> building test binary!");
 
@@ -102,29 +103,29 @@ fn main() {
         writeln!(log_file, "{:?}", line).unwrap();
     }
 
-    // Step 2. Building library
+    // Step 2a. Building library - windows_layer
     writeln!(log_file, "\n\nRunning cl.exe to build library...\n").unwrap();
-    let lib_output = if cfg!(target_os = "windows") {
+    let windows_layer_output = if cfg!(target_os = "windows") {
         let mut cmd = Command::new(compiler);
-        let lib_source = "src/library.cpp";
-        let fo_string = format!("/Fo{}/{}.obj", output_dir, windows_test_lib);
+        let windows_layer_lib_source = "src/windows_layer.cpp";
+        let fo_string = format!("/Fo{}/{}.obj", output_dir, windows_layer_lib);
 
         cmd.arg("/c")
            .arg(fo_string)
-           .arg(lib_source);
+           .arg(windows_layer_lib_source);
 
-        let output = cmd.output().expect("Failed to execute command cl.exe --> building obj file!");
+        let output = cmd.output().expect("Failed to execute command cl.exe --> building windows layer obj file!");
 
         if !output.status.success() {
-            panic!("\n\n\nFailed to run compiler for .lib files! {:?}\n\n\n", output);
+            panic!("\n\n\nFailed to run compiler for windows layer library! {:?}\n\n\n", output);
         }
 
         &output.stdout.clone()
     } else {
-        panic!("{}", only_windows_warning);
+        panic!("{}", only_windows_warning)
     };
 
-    for line in blob_to_lines(&String::from_utf8(lib_output.to_vec()).unwrap()) {
+    for line in blob_to_lines(&String::from_utf8(windows_layer_output.to_vec()).unwrap()) {
         writeln!(log_file, "{:?}", line).unwrap();
     }
 
@@ -132,8 +133,8 @@ fn main() {
     writeln!(log_file, "\n\nRunning lib.exe to link to .lib static library file...\n\n").unwrap();
     let link_output = if cfg!(target_os = "windows") {
         let mut cmd = Command::new(lib_bin);
-        let obj_file = format!("{}/{}.obj", output_dir, windows_test_lib);
-        let output_lib_file = format!("/out:{}/{}.lib", output_dir, windows_test_lib);
+        let obj_file = format!("{}/{}.obj", output_dir, windows_layer_lib);
+        let output_lib_file = format!("/out:{}/{}.lib", output_dir, windows_layer_lib);
 
         cmd.arg(obj_file)
            .arg(output_lib_file)
@@ -156,5 +157,5 @@ fn main() {
 
     // Finally - link build .lib with our Rust code
     println!("{}", format!("cargo:rustc-link-search={}/", output_dir));
-    println!("{}", format!("cargo:rustc-link-lib=static={}", windows_test_lib));
+    println!("{}", format!("cargo:rustc-link-lib=static={}", windows_layer_lib));
 }
