@@ -29,9 +29,6 @@ fn main() {
     let windows_code_test_binary = "shipment_win32_test.exe";
     let windows_layer_lib = "windows_layer_library";
     fs::create_dir_all(output_dir).unwrap();
-
-    // Source files for c++ build
-    let source_file = "src/shipment.cpp";
     
 
     // Step 0. Running vcvar.bat file
@@ -66,44 +63,7 @@ fn main() {
         writeln!(log_file, "{:?}", line).unwrap();
     }
 
-    // Step 1. Building test binary for C++ windows code
-    // After enabling environment try to run cl.exe
-    writeln!(log_file, "\n\nRunning cl.exe to build test binary...\n").unwrap();
-    let compiler_output = if cfg!(target_os = "windows") {
-        let fe_string = format!("/Fe{}/{}", output_dir, windows_code_test_binary);
-        let fo_string = format!("/Fo{}/", output_dir);
-        let fd_string = format!("/Fd{}/", output_dir);
-
-        let mut cmd = Command::new(compiler);
-        cmd.arg("/EHsc")
-           .arg("/Zi")
-           .arg(fe_string)
-           .arg(fo_string)
-           .arg(fd_string)
-           .arg(source_file)
-           .arg("/link")
-           .arg("user32.lib")
-           .arg("gdi32.lib");
-
-        let output = cmd.output().expect("Failed to execute command cl.exe! --> building test binary!");
-
-        if !output.status.success() {
-            // DEBUG
-            eprintln!("Current dir: {}", std::env::current_dir().unwrap().display());
-
-            panic!("\n\n\nFailed to run compiler! {:?}\n\n\n", output);
-        }
-
-        &output.stdout.clone()
-    } else {
-        panic!("{}", only_windows_warning)
-    };
-
-    for line in blob_to_lines(&String::from_utf8(compiler_output.to_vec()).unwrap()) {
-        writeln!(log_file, "{:?}", line).unwrap();
-    }
-
-    // Step 2a. Building library - windows_layer
+    // Step 1. Building library - windows_layer
     writeln!(log_file, "\n\nRunning cl.exe to build library...\n").unwrap();
     let windows_layer_output = if cfg!(target_os = "windows") {
         let mut cmd = Command::new(compiler);
@@ -129,7 +89,7 @@ fn main() {
         writeln!(log_file, "{:?}", line).unwrap();
     }
 
-    // Step 3. Linking obj file to .lib file
+    // Step 2. Linking obj file to .lib file
     writeln!(log_file, "\n\nRunning lib.exe to link to .lib static library file...\n\n").unwrap();
     let link_output = if cfg!(target_os = "windows") {
         let mut cmd = Command::new(lib_bin);
